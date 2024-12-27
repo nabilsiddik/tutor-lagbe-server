@@ -45,8 +45,6 @@ async function run() {
     })
 
 
-
-
     // Tutorial Related APIs
     // Post tutorial
     app.post('/tutorials', async (req, res) => {
@@ -54,6 +52,22 @@ async function run() {
         const result = await tutorialCollection.insertOne(tutorial)
         res.send(result)
     })
+
+    // Get all tutorials
+    app.get('/tutorials', async (req, res) => {
+        const result = await tutorialCollection.find().toArray()
+        res.send(result)
+    })
+
+
+    // Get tutorial of a specific id
+    app.get('/tutorials/:id', async (req, res) => {
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result = await tutorialCollection.findOne(query)
+        res.send(result)
+    })
+
 
     // Get tutorial based on specific email
     app.get('/my-tutorials', async (req, res) => {
@@ -66,8 +80,6 @@ async function run() {
     })
 
 
-
-
     // Delete tutorial of specific id
     app.delete('/delete-tutorial/:id', async (req, res) => {
         const id = req.params.id
@@ -77,6 +89,25 @@ async function run() {
 
         res.send(result)
     })
+
+
+
+    // update tutorial of specific id
+    app.patch('/update-tutorial/:id', async (req, res) => {
+        const id = req.params.id
+        const updateFields = req.body
+        const query = {_id : new ObjectId(id)}
+        const update = {
+            $set: updateFields
+        }
+
+        const result = await tutorialCollection.updateOne(query, update)
+
+        res.send(result)
+    })
+
+
+
 
 
 
