@@ -29,18 +29,32 @@ async function run() {
     await client.connect();
     
     const userCollection = client.db('tutor_lagbe').collection('users')
+    const tutorialCollection = client.db('tutor_lagbe').collection('tutorials')
 
     app.get('/', (req, res) => {
         res.send('Servicer is running perfectly')
     })
 
 
+    // User related APIs
     // Post users
     app.post('/users', (req, res) => {
         const user = req.body
         const result = userCollection.insertOne(user)
         res.send(result)
     })
+
+
+
+
+    // Tutorial Related APIs
+    // Post tutorial
+    app.post('/tutorials', (req, res) => {
+        const tutorial = req.body
+        const result = tutorialCollection.insertOne(tutorial)
+        res.send(result)
+    })
+
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
