@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -38,9 +38,9 @@ async function run() {
 
     // User related APIs
     // Post users
-    app.post('/users', (req, res) => {
+    app.post('/users', async(req, res) => {
         const user = req.body
-        const result = userCollection.insertOne(user)
+        const result = await userCollection.insertOne(user)
         res.send(result)
     })
 
@@ -49,9 +49,32 @@ async function run() {
 
     // Tutorial Related APIs
     // Post tutorial
-    app.post('/tutorials', (req, res) => {
+    app.post('/tutorials', async (req, res) => {
         const tutorial = req.body
-        const result = tutorialCollection.insertOne(tutorial)
+        const result = await tutorialCollection.insertOne(tutorial)
+        res.send(result)
+    })
+
+    // Get tutorial based on specific email
+    app.get('/my-tutorials', async (req, res) => {
+        const email = req.query.email
+        const query = {tutorEmail : email}
+
+        const result = await tutorialCollection.find(query).toArray()
+
+        res.send(result)
+    })
+
+
+
+
+    // Delete tutorial of specific id
+    app.delete('/delete-tutorial/:id', async (req, res) => {
+        const id = req.params.id
+        const query = {_id : new ObjectId(id)}
+
+        const result = await tutorialCollection.deleteOne(query)
+
         res.send(result)
     })
 
