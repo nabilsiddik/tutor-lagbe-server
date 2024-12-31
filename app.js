@@ -46,6 +46,12 @@ async function run() {
             res.send(result)
         })
 
+        // Get all users
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray()
+            res.send(result)
+        })
+
 
         // Tutorial Related APIs
         // Post tutorial
