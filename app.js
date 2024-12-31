@@ -17,109 +17,210 @@ console.log(uri)
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
 });
 
 async function run() {
-  try {
-    await client.connect();
-    
-    const userCollection = client.db('tutor_lagbe').collection('users')
-    const tutorialCollection = client.db('tutor_lagbe').collection('tutorials')
+    try {
+        await client.connect();
 
-    app.get('/', (req, res) => {
-        res.send('Servicer is running perfectly')
-    })
+        const userCollection = client.db('tutor_lagbe').collection('users')
+        const tutorialCollection = client.db('tutor_lagbe').collection('tutorials')
+        const tutorCollection = client.db('tutor_lagbe').collection('tutors')
+        const bookedTutorsCollection = client.db('tutor_lagbe').collection('booked_tutors')
 
-
-    // User related APIs
-    // Post users
-    app.post('/users', async(req, res) => {
-        const user = req.body
-        const result = await userCollection.insertOne(user)
-        res.send(result)
-    })
+        app.get('/', (req, res) => {
+            res.send('Servicer is running perfectly')
+        })
 
 
-    // Tutorial Related APIs
-    // Post tutorial
-    app.post('/tutorials', async (req, res) => {
-        const tutorial = req.body
-        const result = await tutorialCollection.insertOne(tutorial)
-        res.send(result)
-    })
-
-    // Get all tutorials
-    app.get('/tutorials', async (req, res) => {
-        const result = await tutorialCollection.find().toArray()
-        res.send(result)
-    })
+        // User related APIs
+        // Post users
+        app.post('/users', async (req, res) => {
+            const user = req.body
+            const result = await userCollection.insertOne(user)
+            res.send(result)
+        })
 
 
-    // Get tutorial of a specific id
-    app.get('/tutorials/:id', async (req, res) => {
-        const id = req.params.id
-        const query = {_id: new ObjectId(id)}
-        const result = await tutorialCollection.findOne(query)
-        res.send(result)
-    })
+        // Tutorial Related APIs
+        // Post tutorial
+        app.post('/tutorials', async (req, res) => {
+            const tutorial = req.body
+
+            // distructure tutor info from tutorial
+            const {
+                tutorName,
+                tutorEmail,
+                tutorImage,
+                language,
+                description,
+                review,
+                price
+            } = tutorial
+
+            tutor = {
+                tutorName,
+                tutorEmail,
+                tutorImage,
+                language,
+                description,
+                review,
+                price
+            }
+
+            const result = await tutorialCollection.insertOne(tutorial)
+
+            const tutorResult = await tutorCollection.insertOne(tutorial)
+            res.send(result)
+        })
+
+        // Get all tutorials
+        app.get('/tutorials', async (req, res) => {
+            const result = await tutorialCollection.find().toArray()
+            res.send(result)
+        })
 
 
-    // Get tutorial based on specific email
-    app.get('/my-tutorials', async (req, res) => {
-        const email = req.query.email
-        const query = {tutorEmail : email}
-
-        const result = await tutorialCollection.find(query).toArray()
-
-        res.send(result)
-    })
+        // Get tutorial of a specific id
+        app.get('/tutorials/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await tutorialCollection.findOne(query)
+            res.send(result)
+        })
 
 
-    // Delete tutorial of specific id
-    app.delete('/delete-tutorial/:id', async (req, res) => {
-        const id = req.params.id
-        const query = {_id : new ObjectId(id)}
+        // Get tutorial based on specific email
+        app.get('/my-tutorials', async (req, res) => {
+            const email = req.query.email
+            const query = { tutorEmail: email }
 
-        const result = await tutorialCollection.deleteOne(query)
+            const result = await tutorialCollection.find(query).toArray()
 
-        res.send(result)
-    })
+            res.send(result)
+        })
 
 
+        // Delete tutorial of specific id
+        app.delete('/delete-tutorial/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
 
-    // update tutorial of specific id
-    app.patch('/update-tutorial/:id', async (req, res) => {
-        const id = req.params.id
-        const updateFields = req.body
-        const query = {_id : new ObjectId(id)}
-        const update = {
-            $set: updateFields
-        }
+            const result = await tutorialCollection.deleteOne(query)
 
-        const result = await tutorialCollection.updateOne(query, update)
-
-        res.send(result)
-    })
+            res.send(result)
+        })
 
 
 
+        // update tutorial of specific id
+        app.patch('/update-tutorial/:id', async (req, res) => {
+            const id = req.params.id
+            const updateFields = req.body
+            const query = { _id: new ObjectId(id) }
+            const option = {upsert: true}
+            const update = {
+                $set: updateFields
+            }
+
+            const result = await tutorialCollection.updateOne(query, update, option)
+
+            res.send(result)
+        })
 
 
 
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
+
+
+
+
+
+
+
+        // Tutor related APIs
+        // Post tutors
+        // app.post('/tutors', async (req, res) => {
+        //     const tutor = req.body
+        //     const result = await tutorCollection.insertOne(tutor)
+        //     res.send(result)
+        // })
+
+        // Get all tutors
+        app.get('/tutors', async (req, res) => {
+            const result = await tutorCollection.find().toArray()
+            res.send(result)
+        })
+
+
+         // Get tutor of a specific id
+         app.get('/tutor/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await tutorCollection.findOne(query)
+            res.send(result)
+        })
+
+
+        // Get tutor of a specific category
+        app.get('/tutors/:languageName', async (req, res) => {
+            const languageCategory = req.params.languageName
+            const query = { language: languageCategory }
+            const result = await tutorCollection.find(query).toArray()
+            res.send(result)
+        })
+
+
+        // Post booked tutors
+        app.post('/booked-tutors', async (req, res) => {
+            const bookedTutor = req.body
+            const result = await bookedTutorsCollection.insertOne(bookedTutor)
+            res.send(result)
+        })
+
+        // Get booked tutorial of specific user
+        app.get('/my-booked-tutors', async (req, res) => {
+            const email = req.query.email
+            const query = { email: email }
+
+            const result = await bookedTutorsCollection.find(query).toArray()
+
+            res.send(result)
+        })
+
+        // update review of specific id
+        // app.patch('/my-booked-tutors/:id', async (req, res) => {
+        //     const id = req.params.id
+        //     const data = req.body
+        //     const query = { _id: new ObjectId(id) }
+        //     const updatedDoc = {
+        //         $set: {
+        //             review: data.review + 'dfjlkdf'
+        //         }
+        //     }
+
+        //     const result = await bookedTutorsCollection.updateOne(query, updatedDoc)
+
+        //     res.send(result)
+        // })
+
+
+
+
+
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
 }
 run().catch(console.dir);
 
 
-app.listen(port, ()=>{
+app.listen(port, () => {
     console.log(`Server is running on port ${port}`)
 })
