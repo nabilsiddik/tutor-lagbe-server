@@ -199,20 +199,34 @@ async function run() {
         })
 
         // update review of specific id
-        // app.patch('/my-booked-tutors/:id', async (req, res) => {
-        //     const id = req.params.id
-        //     const data = req.body
-        //     const query = { _id: new ObjectId(id) }
-        //     const updatedDoc = {
-        //         $set: {
-        //             review: data.review + 'dfjlkdf'
-        //         }
-        //     }
+        app.post('/my-booked-tutors/:id', async (req, res) => {
+            const tutor = req.body
+            const id = tutor.tutorId
+            const query = {tutorId: id}
 
-        //     const result = await bookedTutorsCollection.updateOne(query, updatedDoc)
+            const bookedTutor = await bookedTutorsCollection.findOne(query)
 
-        //     res.send(result)
-        // })
+            let newCount = 0
+            if(bookedTutor.review){
+                newCount = bookedTutor.review + 1
+            }else{
+                newCount = 1
+            }
+
+            // Update the review info
+            const filter = {tutorId: id}
+            const updatedDoc = {
+                $set: {
+                    review : newCount
+                }
+            }
+
+            const updateResult = await bookedTutorsCollection.updateOne(filter, updatedDoc)
+ 
+
+            console.log(bookedTutor, id)
+            res.send(updateResult)
+        })
 
 
 
