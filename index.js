@@ -6,9 +6,41 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const port = process.env.PORT || 5000
 
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
+
 // Middleware
-app.use(cors())
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'https://user-authentication-30262.web.app',
+        'https://user-authentication-30262.firebaseapp.com'
+    ],
+    credentials: true
+}))
 app.use(express.json())
+app.use(cookieParser())
+
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token
+
+    if (!token) {
+        return res.status(401).send({ message: "Unauthorized access" })
+    }
+
+    // verify token
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' })
+        }
+
+        req.user = decoded
+
+        next()
+    })
+
+
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.3u9wf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -35,6 +67,29 @@ async function run() {
 
         app.get('/', (req, res) => {
             res.send('Servicer is running perfectly')
+        })
+
+
+
+        // Auth related apis
+        app.post('/jwt', (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5h' })
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV=== 'production'
+            })
+                .send({ success: true })
+        })
+
+
+        app.post('/logout', (req, res) => {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV=== 'production'
+            })
+                .send({ success: true })
         })
 
 
@@ -129,7 +184,7 @@ async function run() {
             const id = req.params.id
             const updateFields = req.body
             const query = { _id: new ObjectId(id) }
-            const option = {upsert: true}
+            const option = { upsert: true }
             const update = {
                 $set: updateFields
             }
@@ -163,8 +218,8 @@ async function run() {
         })
 
 
-         // Get tutor of a specific id
-         app.get('/tutor/:id', async (req, res) => {
+        // Get tutor of a specific id
+        app.get('/tutor/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await tutorCollection.findOne(query)
@@ -188,6 +243,15 @@ async function run() {
             res.send(result)
         })
 
+        // get booked tutors
+        app.get('/booked-tutors', async (req, res) => {
+            const result = await bookedTutorsCollection.find().toArray()
+            res.send(result)
+        })
+
+
+
+
         // Get booked tutorial of specific user
         app.get('/my-booked-tutors', async (req, res) => {
             const email = req.query.email
@@ -202,27 +266,27 @@ async function run() {
         app.post('/my-booked-tutors/:id', async (req, res) => {
             const tutor = req.body
             const id = tutor.tutorId
-            const query = {tutorId: id}
+            const query = { tutorId: id }
 
             const bookedTutor = await bookedTutorsCollection.findOne(query)
 
             let newCount = 0
-            if(bookedTutor.review){
+            if (bookedTutor.review) {
                 newCount = bookedTutor.review + 1
-            }else{
+            } else {
                 newCount = 1
             }
 
-            // Update the review info
-            const filter = {tutorId: id}
+            // Update the review info in booked tutor
+            const filter = { tutorId: id }
             const updatedDoc = {
                 $set: {
-                    review : newCount
+                    review: newCount
                 }
             }
 
             const updateResult = await bookedTutorsCollection.updateOne(filter, updatedDoc)
- 
+
 
             console.log(bookedTutor, id)
             res.send(updateResult)
