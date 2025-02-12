@@ -45,7 +45,6 @@ app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.3u9wf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-console.log(uri)
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -197,7 +196,20 @@ async function run() {
 
         // Get all tutors
         app.get('/tutors', async (req, res) => {
-            const result = await tutorCollection.find().toArray()
+
+            const {language} = req.query
+
+            let result
+
+            if(language){
+                const tutors = await tutorCollection.find().toArray()
+                const searchedTutors = tutors.filter((tutor) => tutor.language.toLowerCase().startsWith(language.toLowerCase()))
+
+                result = searchedTutors
+            }else{
+                result = await tutorCollection.find().toArray()
+            }
+
             res.send(result)
         })
 
@@ -258,7 +270,7 @@ async function run() {
         })
 
         // update review of specific id
-        app.post('/my-booked-tutors/:id', async (req, res) => {
+        app.patch('/my-booked-tutors/:id', async (req, res) => {
             const tutor = req.body
             const id = tutor.tutorId
             const query = { tutorId: id }
@@ -280,10 +292,30 @@ async function run() {
                 }
             }
 
+
+
+            // Update the review info in tutor
+            const mainTutorQuery = {_id: new ObjectId(id)}
+            const mainTutor = await tutorCollection.findOne(mainTutorQuery)
+
+            let mainTutorCount = 1
+            if(mainTutor.review){
+                mainTutorCount = mainTutor.review + 1
+            }else{
+                mainTutorCount = 1
+            }
+            const mainTutorUpdatedDoc = {
+                $set: {
+                    review: mainTutorCount
+                }
+            }
+
+
+
+
             const updateResult = await bookedTutorsCollection.updateOne(filter, updatedDoc)
+            const mainTutorUpdatedResult = await tutorCollection.updateOne(mainTutorQuery, mainTutorUpdatedDoc)
 
-
-            console.log(bookedTutor, id)
             res.send(updateResult)
         })
 
