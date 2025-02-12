@@ -14,7 +14,7 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'https://user-authentication-30262.web.app',
-        'https://user-authentication-30262.firebaseapp.com'
+        'https://user-authentication-30262.firebaseapp.com',
     ]
     // credentials: true
 }))
@@ -195,22 +195,6 @@ async function run() {
         })
 
 
-
-
-
-
-
-
-
-
-        // Tutor related APIs
-        // Post tutors
-        // app.post('/tutors', async (req, res) => {
-        //     const tutor = req.body
-        //     const result = await tutorCollection.insertOne(tutor)
-        //     res.send(result)
-        // })
-
         // Get all tutors
         app.get('/tutors', async (req, res) => {
             const result = await tutorCollection.find().toArray()
@@ -239,8 +223,19 @@ async function run() {
         // Post booked tutors
         app.post('/booked-tutors', async (req, res) => {
             const bookedTutor = req.body
+            const { tutorEmail } = req.body
+
+            const bookedTutors = await bookedTutorsCollection.find().toArray()
+            const existingTutor = bookedTutors.find(tutor => tutor.tutorEmail === tutorEmail);
+            if (existingTutor) {
+                return res.status(400).send({ message: "Tutor already booked" });
+            }
+
             const result = await bookedTutorsCollection.insertOne(bookedTutor)
-            res.send(result)
+
+
+
+            res.status(200).send(result)
         })
 
         // get booked tutors
