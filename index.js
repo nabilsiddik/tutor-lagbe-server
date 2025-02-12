@@ -197,7 +197,7 @@ async function run() {
         // Get all tutors
         app.get('/tutors', async (req, res) => {
 
-            const { language, sortBy, sortOrder = 'asc' } = req.query
+            const { language } = req.query
 
             let result
             const tutors = await tutorCollection.find().toArray()
@@ -208,26 +208,7 @@ async function run() {
             } else {
                 result = await tutorCollection.find().toArray()
             }
-
-            // Sorting logic
-            if (sortBy) {
-                tutors.sort((a, b) => {
-                    const valueA = a[sortBy]?.toString().toLowerCase();
-                    const valueB = b[sortBy]?.toString().toLowerCase();
-
-                    if (sortOrder === 'desc') {
-                        return valueB.localeCompare(valueA); // Descending Order
-                    } else {
-                        return valueA.localeCompare(valueB); // Ascending Order (default)
-                    }
-                });
-
-                result = tutors
-            }
-
    
-
-
             res.send(result)
         })
 
