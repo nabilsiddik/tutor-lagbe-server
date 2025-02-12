@@ -197,18 +197,36 @@ async function run() {
         // Get all tutors
         app.get('/tutors', async (req, res) => {
 
-            const {language} = req.query
+            const { language, sortBy, sortOrder = 'asc' } = req.query
 
             let result
+            const tutors = await tutorCollection.find().toArray()
 
-            if(language){
-                const tutors = await tutorCollection.find().toArray()
+            if (language) {
                 const searchedTutors = tutors.filter((tutor) => tutor.language.toLowerCase().startsWith(language.toLowerCase()))
-
                 result = searchedTutors
-            }else{
+            } else {
                 result = await tutorCollection.find().toArray()
             }
+
+            // Sorting logic
+            if (sortBy) {
+                tutors.sort((a, b) => {
+                    const valueA = a[sortBy]?.toString().toLowerCase();
+                    const valueB = b[sortBy]?.toString().toLowerCase();
+
+                    if (sortOrder === 'desc') {
+                        return valueB.localeCompare(valueA); // Descending Order
+                    } else {
+                        return valueA.localeCompare(valueB); // Ascending Order (default)
+                    }
+                });
+
+                result = tutors
+            }
+
+   
+
 
             res.send(result)
         })
@@ -295,13 +313,13 @@ async function run() {
 
 
             // Update the review info in tutor
-            const mainTutorQuery = {_id: new ObjectId(id)}
+            const mainTutorQuery = { _id: new ObjectId(id) }
             const mainTutor = await tutorCollection.findOne(mainTutorQuery)
 
             let mainTutorCount = 1
-            if(mainTutor.review){
+            if (mainTutor.review) {
                 mainTutorCount = mainTutor.review + 1
-            }else{
+            } else {
                 mainTutorCount = 1
             }
             const mainTutorUpdatedDoc = {
