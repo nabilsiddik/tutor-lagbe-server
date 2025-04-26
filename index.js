@@ -63,11 +63,48 @@ async function run() {
         const tutorialCollection = client.db('tutor_lagbe').collection('tutorials')
         const tutorCollection = client.db('tutor_lagbe').collection('tutors')
         const bookedTutorsCollection = client.db('tutor_lagbe').collection('booked_tutors')
+        const lessonCollection = client.db('tutor_lagbe').collection('lessons')
 
         app.get('/', (req, res) => {
             res.send('Servicer is running perfectly')
         })
 
+
+        // Lesson Related APIs
+        app.post('/lesson', async(req, res) => {
+            const lesson = req.body
+            const result = await lessonCollection.insertOne(lesson)
+            res.send(result)
+            console.log(result)
+        })
+
+        // Get all lesson
+        app.get('/lessons', async(req, res) => {
+            const lessons = await lessonCollection.find({}).toArray()
+            res.send(lessons)
+        })
+
+        // Get specific users lesson by email
+        app.get('/my-lessons', async(req, res) => {
+            const email = req.query.email
+            const query = {'tutor?.email': email}
+            try{
+                const myLessons = await lessonCollection.find(query).toArray()
+                res.send(myLessons)
+            }catch(error){
+                console.log(error)
+                res.status(500).send({message: 'server erro while fetching my lessons'})
+            }
+        })
+
+        // Delete lesson
+        app.delete('/delete-lesson/:id', async(req, res) => {
+            const lessonId = req.params.id
+            const query = {_id: new ObjectId(lessonId)}
+
+            const result = await lessonCollection.deleteOne(query)
+            res.send(result)
+        })
 
 
         // // Auth related apis
