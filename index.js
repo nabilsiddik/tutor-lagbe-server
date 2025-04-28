@@ -87,15 +87,27 @@ async function run() {
         // Get specific users lesson by email
         app.get('/my-lessons', async(req, res) => {
             const email = req.query.email
-            const query = {'tutor?.email': email}
+            const query = {'tutor.email': email}
             try{
                 const myLessons = await lessonCollection.find(query).toArray()
                 res.send(myLessons)
             }catch(error){
-                console.log(error)
                 res.status(500).send({message: 'server erro while fetching my lessons'})
             }
         })
+
+        // get lesson by id
+        app.get('/lesson/:id', async(req, res) => {
+            const id = req.params.id
+            const query = {_id: new ObjectId(id)}
+            try{
+                const lesson = await lessonCollection.findOne(query)
+                res.send(lesson)
+            }catch(error){
+                res.status(500).send({message: 'server erro while fetching lesson by id'})
+            }
+        })
+
 
         // Delete lesson
         app.delete('/delete-lesson/:id', async(req, res) => {
@@ -133,13 +145,21 @@ async function run() {
         // Post users
         app.post('/users', async (req, res) => {
             const user = req.body
-            const result = await userCollection.insertOne(user)
+            const result = await userCollection.insertOne({...user, role: 'user'})
             res.send(result)
         })
 
         // Get all users
         app.get('/users', async (req, res) => {
             const result = await userCollection.find().toArray()
+            res.send(result)
+        })
+
+        // Delete user
+        app.delete('/delete-user/:id', async (req, res) => {
+            const userId = req.params.id
+            const query = {_id: new ObjectId(userId)}
+            const result = await userCollection.deleteOne(query)
             res.send(result)
         })
 
@@ -290,6 +310,28 @@ async function run() {
         app.get('/booked-tutors', async (req, res) => {
             const result = await bookedTutorsCollection.find().toArray()
             res.send(result)
+        })
+
+        // Insert tutor application
+        app.post('/tutor-application', async(req, res)=> {
+            const userEmail = req.query.email
+            const userInfo = req.body
+            const query = {email: userEmail}
+            const user = await userCollection.findOne(query)
+
+            if(user?.role !== 'tutor'){
+                const updatedDoc = {
+                    $set: {
+                        userStatus: 'pending',
+                        userInfo
+                    }
+                }
+
+                const result = await userCollection.updateOne(query, updatedDoc)
+                res.send(result)
+            }else{
+                res.send({message: 'User is already a tutor'})
+            }
         })
 
 
