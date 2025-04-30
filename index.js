@@ -155,6 +155,42 @@ async function run() {
             res.send(result)
         })
 
+        // Get user by id
+        app.get('/user/:id', async (req, res) => {
+            const userId = req.params.id
+            const query = {_id: new ObjectId(userId)}
+            const result = await userCollection.findOne(query)
+            res.send(result)
+        })
+
+        // Change user status
+        app.patch('/update-status/:id', async(req, res) => {
+            const userId = req.params.id
+            const query = {_id: new ObjectId(userId)}
+            const user = await userCollection.findOne(query)
+            const {userStatus} = req.body
+
+            if(userStatus.toLowerCase() === user?.userStatus.toLowerCase()){
+                return res.send({message: `Status is already ${userStatus}`})
+            }
+
+            const updatedDoc = {
+                $set: {userStatus}
+            }
+
+            const result = await userCollection.updateOne(query, updatedDoc)
+            res.send(result)
+        })
+
+
+        // Get all applied users
+        app.get('/applied-users', async (req, res) => {
+            const allUsers = await userCollection.find().toArray()
+            const appliedUsers = allUsers.filter((user) => user?.userStatus === 'pending')
+
+            res.send(appliedUsers)
+        })
+
         // Delete user
         app.delete('/delete-user/:id', async (req, res) => {
             const userId = req.params.id
@@ -333,7 +369,6 @@ async function run() {
                 res.send({message: 'User is already a tutor'})
             }
         })
-
 
 
 
