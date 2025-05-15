@@ -64,6 +64,7 @@ async function run() {
         const tutorCollection = client.db('tutor_lagbe').collection('tutors')
         const bookedTutorsCollection = client.db('tutor_lagbe').collection('booked_tutors')
         const lessonCollection = client.db('tutor_lagbe').collection('lessons')
+        const tutorApplicationCollection = client.db('tutor_lagbe').collection('tutor_application')
 
         app.get('/', (req, res) => {
             res.send('Servicer is running perfectly')
@@ -198,6 +199,48 @@ async function run() {
             const result = await userCollection.deleteOne(query)
             res.send(result)
         })
+
+
+
+
+        // Post Tutor application
+        app.post('/tutor-application', async(req, res) => {
+            const tutorApplication = req.body
+            if(!tutorApplication) return
+            try{
+                const result = await tutorApplicationCollection.insertOne({...tutorApplication, isApplicationSubmitted: true})
+                res.status(201).send(result)
+            }catch(error){
+                res.status(500).send({message: 'Server error while submitting tutor application'})
+            }
+            
+        })
+
+        // Get tutor application by id
+        app.get('/tutor-application', async (req, res) => {
+            const email = req.query.email
+
+            if(!email){
+                return res.status(400).json({error: 'Email is required'})
+            }
+
+            try{
+                const query = {'user.email': email}
+                const application = await tutorApplicationCollection.findOne(query)
+
+                if(!application){
+                    return res.status(404).json({error: 'Tutor application not found'})
+                }
+
+                res.status(200).json(application)
+            }catch(error){
+                console.error('Error fetching tutor application', error)
+                res.status(500).json({error: 'Server Error'})
+            }
+        })
+
+
+
 
 
         // Tutorial Related APIs
